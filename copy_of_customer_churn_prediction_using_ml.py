@@ -69,16 +69,19 @@ for name, model in models.items():
     print(f"{name} CV Accuracy: {np.mean(scores):.2f}")
 
 # Train final Random Forest model
-rfc = RandomForestClassifier(random_state=42)
-rfc.fit(X_train_smote, y_train_smote)
+# rfc = RandomForestClassifier(random_state=42)
+# rfc.fit(X_train_smote, y_train_smote)
+final_model = RandomForestClassifier(random_state=42)
+final_model.fit(X_train_smote, y_train_smote)
 
 # Evaluation
-y_pred = rfc.predict(X_test)
+y_pred = final_model.predict(X_test)
 print("Accuracy:", accuracy_score(y_test, y_pred))
 print(classification_report(y_test, y_pred))
 
 # Save model and feature list
-model_data = {"model": rfc, "features_names": X.columns.tolist()}
+# model_data = {"model": rfc, "features_names": X.columns.tolist()}
+model_data = {"model": final_model, "features_names": X.columns.tolist()}
 with open("customer_churn_model.pkl", "wb") as f:
     pickle.dump(model_data, f)
 
@@ -93,15 +96,20 @@ input_data = {
 }
 
 input_df = pd.DataFrame([input_data])
+input_df["TotalCharges"] = input_df["TotalCharges"].replace({" ": "0.0", "": "0.0"}).astype(float)
 
 with open("encoders.pkl", "rb") as f:
     saved_encoders = pickle.load(f)
 
 # Apply saved encoding to input
+# for col, encoder in saved_encoders.items():
+#     input_df[col] = encoder.transform(input_df[col])
+
+# prediction = rfc.predict(input_df)
 for col, encoder in saved_encoders.items():
     input_df[col] = encoder.transform(input_df[col])
-
-prediction = rfc.predict(input_df)
+input_df = input_df[model_data["features_names"]]
+prediction = final_model.predict(input_df)
 print(f"Result: {'Churn' if prediction[0] == 1 else 'No Churn'}")
 # import numpy as np
 # import pandas as pd
